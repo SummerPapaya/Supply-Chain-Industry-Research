@@ -1,0 +1,6 @@
+{
+  "name": "2026年上半年供应链报告",
+  "description": "2026年上半年全球与中国供应链行业洞察报告。包含行业综述、市场表现、热门议题和最新趋势，整合基于Gemini实时检索的智能分析问答助手。",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
