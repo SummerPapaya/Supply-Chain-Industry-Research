@@ -1,3 +1,30 @@
+export type PeriodKey = "2026_H1" | "2026_Q1" | "2026_Q2" | "2025_H2" | "2025_FY";
+
+export interface ReportingPeriod {
+  id: PeriodKey;
+  code: string;
+  label: string;
+  labelEn: string;
+  windowDesc: string;
+  windowDescEn: string;
+  asOfDate: string;
+  asOfDateEn: string;
+  reportPeriodText: string;
+  reportPeriodTextEn: string;
+  titleOverview: string;
+  titleOverviewEn: string;
+  summaryText: string;
+  summaryTextEn: string;
+  wciBaseRate: number;
+  scsiBaseIndex: number;
+  airFreightGrowth: number;
+  esgComplianceRate: number;
+  kpis: KPIItem[];
+  freightRateTrends: FreightRateData[];
+  routeGrowthRates: GrowthData[];
+  techAdoptions: TechAdoptionData[];
+}
+
 export interface KPIItem {
   label: string;
   labelEn: string;

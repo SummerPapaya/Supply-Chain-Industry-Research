@@ -1,16 +1,19 @@
-import { kpis as defaultKpis } from "../data";
-import { TrendingUp, ShieldAlert, Cpu, Leaf, Info } from "lucide-react";
+import { kpis as defaultKpis, getPeriodData } from "../data";
+import { TrendingUp, ShieldAlert, Cpu, Leaf, Info, Calendar } from "lucide-react";
 import { motion } from "motion/react";
-import { KPIItem } from "../types";
+import { KPIItem, ReportingPeriod, PeriodKey } from "../types";
 import { locales } from "../locales";
 
 interface ReportOverviewProps {
   kpiData?: KPIItem[];
+  periodKey?: PeriodKey;
+  periodData?: ReportingPeriod;
   lang: "zh" | "en";
 }
 
-export default function ReportOverview({ kpiData, lang }: ReportOverviewProps) {
-  const currentKpis = kpiData || defaultKpis;
+export default function ReportOverview({ kpiData, periodKey = "2026_H1", periodData, lang }: ReportOverviewProps) {
+  const activePeriod = periodData || getPeriodData(periodKey);
+  const currentKpis = kpiData || activePeriod.kpis || defaultKpis;
   const t = locales[lang].overview;
 
   const getIcon = (label: string) => {
@@ -34,34 +37,26 @@ export default function ReportOverview({ kpiData, lang }: ReportOverviewProps) {
         <div className="absolute inset-0 opacity-[0.03] pointer-events-none bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:16px_16px]"></div>
         
         <div className="relative z-10 max-w-4xl">
-          <span className="bg-blue-600 text-white px-2.5 py-0.5 text-[9px] font-bold tracking-widest uppercase rounded-sm font-mono border border-blue-500">
-            {t.executiveSummary}
-          </span>
+          <div className="flex items-center gap-3 flex-wrap">
+            <span className="bg-blue-600 text-white px-2.5 py-0.5 text-[9px] font-bold tracking-widest uppercase rounded-sm font-mono border border-blue-500">
+              {t.executiveSummary}
+            </span>
+            <span className="inline-flex items-center gap-1 bg-slate-800 text-blue-300 px-2.5 py-0.5 text-[10px] font-mono font-bold rounded-sm border border-slate-700">
+              <Calendar className="w-3 h-3 text-blue-400" />
+              {lang === "zh" ? `报告期窗口: ${activePeriod.label}` : `Period Window: ${activePeriod.labelEn}`}
+            </span>
+          </div>
+
           <h2 className="text-2xl md:text-3xl font-extrabold tracking-tight mt-4 text-white">
-            {t.title}
+            {lang === "zh" ? activePeriod.titleOverview : activePeriod.titleOverviewEn}
           </h2>
-          <p className="mt-4 text-slate-300 leading-relaxed text-sm md:text-base">
-            {lang === "zh" ? (
-              <>
-                2026年上半年，全球供应链呈现出极其分化的发展格局。一方面，红海地区及全球核心水道中断完全走向<span className="text-white font-semibold">常态化与长久化运营</span>，被迫绕行南非好望角推高了集装箱综合货运价格，对跨太平洋与亚欧航线的传统成本模型产生了根本性打击。
-              </>
-            ) : (
-              <>
-                In the first half of 2026, the global supply chain landscape shows intense polarization. Disruptions in the Red Sea and key shipping arteries have completely transitioned into a state of <span className="text-white font-semibold">normalized, long-term operations</span>. Rerouting container flows via South Africa&apos;s Cape of Good Hope has systematically spiked average container freight rates, rewriting traditional economic baselines for transpacific and Asia-Europe corridors.
-              </>
-            )}
+          <p className="mt-4 text-slate-300 leading-relaxed text-sm md:text-base font-sans">
+            {lang === "zh" ? activePeriod.summaryText : activePeriod.summaryTextEn}
           </p>
-          <p className="mt-3 text-slate-400 leading-relaxed text-sm md:text-base">
-            {lang === "zh" ? (
-              <>
-                另一方面，在硬性地缘摩擦和高昂物流成本倒逼下，企业在2026年上半年加速了<span className="text-blue-400 font-semibold">“近岸外包2.0 (Nearshoring)”</span>以及<span className="text-blue-400 font-semibold">“生成式供应链AI智能体 (Agentic SC)”</span>的闭环采购与计划应用。绿色减碳在欧盟CSDDD法规硬合规约束下，由选择性溢价转化为企业进入欧洲市场的门槛。
-              </>
-            ) : (
-              <>
-                Faced with persistent geopolitical frictions and elevated freight expenditures, multinational corporations have rapidly expanded <span className="text-blue-400 font-semibold">&ldquo;Nearshoring 2.0&rdquo;</span> (focusing on US-Mexico links) and <span className="text-blue-400 font-semibold">&ldquo;Agentic Supply Chains&rdquo;</span> (deeply integrating LLM agents in automated procurement and logistics scheduling). Guided by the stringent EU CSDDD implementation, decarbonization has moved from an premium elective option to an absolute prerequisite for EU market entry.
-              </>
-            )}
-          </p>
+          <div className="mt-4 pt-3 border-t border-slate-800 flex items-center justify-between text-xs text-slate-400 font-mono">
+            <span>{lang === "zh" ? `截止日期: ${activePeriod.asOfDate}` : `As of: ${activePeriod.asOfDateEn}`}</span>
+            <span className="text-blue-400 font-bold">{lang === "zh" ? `时间段: ${activePeriod.reportPeriodText}` : `Window: ${activePeriod.reportPeriodTextEn}`}</span>
+          </div>
         </div>
       </div>
 

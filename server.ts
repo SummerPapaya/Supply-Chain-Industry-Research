@@ -31,13 +31,20 @@ function getAiClient(): GoogleGenAI {
   return aiClient;
 }
 
+// Endpoint to serve README.md
+app.get("/README.md", (req, res) => {
+  res.sendFile(path.join(process.cwd(), "README.md"));
+});
+
 // 1. API Endpoint for AI grounded supply chain search and analysis
 app.post("/api/analyze", async (req, res) => {
-  const { query, section } = req.body;
+  const { query, section, period } = req.body;
   
   if (!query) {
     return res.status(400).json({ error: "Query is required" });
   }
+
+  const periodContext = period ? period.replace('_', ' ') : '2026 H1';
 
   try {
     const ai = getAiClient();
@@ -46,10 +53,11 @@ app.post("/api/analyze", async (req, res) => {
     let fullPrompt = query;
     if (section) {
       fullPrompt = `
-You are an expert global supply chain analyst specializing in the first half of 2026 (2026 H1). 
-Your task is to analyze the following query and provide a professional, deeply-researched, and data-backed response.
-Use Google Search grounding to retrieve real, actual facts, numbers, and events from late 2025 and 2026.
+You are an expert global supply chain analyst specializing in global logistics and trade analysis for period window: ${periodContext}. 
+Your task is to analyze the following query and provide a professional, deeply-researched, and data-backed response for period ${periodContext}.
+Use Google Search grounding to retrieve real, actual facts, numbers, and events.
 
+Reporting Period Window: ${periodContext}
 Focus sector/report section: ${section}
 
 User request: "${query}"

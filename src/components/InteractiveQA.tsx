@@ -2,12 +2,14 @@ import { useState } from "react";
 import { Search, Compass, ExternalLink, Loader2, Send, HelpCircle, FileText } from "lucide-react";
 import Markdown from "react-markdown";
 import { locales } from "../locales";
+import { PeriodKey } from "../types";
 
 interface InteractiveQAProps {
   lang: "zh" | "en";
+  periodKey?: PeriodKey;
 }
 
-export default function InteractiveQA({ lang }: InteractiveQAProps) {
+export default function InteractiveQA({ lang, periodKey = "2026_H1" }: InteractiveQAProps) {
   const [query, setQuery] = useState("");
   const [activeSection, setActiveSection] = useState("综合报告");
   const [loading, setLoading] = useState(false);
@@ -74,7 +76,8 @@ export default function InteractiveQA({ lang }: InteractiveQAProps) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           query: targetQuery,
-          section: sectionStr
+          section: sectionStr,
+          period: periodKey
         })
       });
 

@@ -13,25 +13,33 @@ import DigitalTransformation from "./components/DigitalTransformation";
 import ReportHotTopics from "./components/ReportHotTopics";
 import FutureOutlook from "./components/FutureOutlook";
 import InteractiveQA from "./components/InteractiveQA";
+import ReadmeModal from "./components/ReadmeModal";
 
-import { kpis, freightRateTrends, routeGrowthRates, techAdoptions } from "./data";
+import { kpis, freightRateTrends, routeGrowthRates, techAdoptions, getPeriodData, periodsData } from "./data";
+import { PeriodKey, ReportingPeriod } from "./types";
 import { locales } from "./locales";
-import { Compass, Clock, BarChart3, Sliders, Cpu, Target, Sparkles, CloudLightning } from "lucide-react";
+import { Compass, Clock, BarChart3, Sliders, Cpu, Target, Sparkles, CloudLightning, Calendar, RefreshCw, CheckCircle2 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<string>("overview");
   const [lang, setLang] = useState<"zh" | "en">("zh");
+  const [isReadmeOpen, setIsReadmeOpen] = useState<boolean>(false);
+
+  // Period window state
+  const [periodKey, setPeriodKey] = useState<PeriodKey>("2026_H1");
+  const activePeriod: ReportingPeriod = getPeriodData(periodKey);
 
   // Live and Periodic states
   const [isLive, setIsLive] = useState<boolean>(true);
   const [mockLatency, setMockLatency] = useState<number>(34);
   const [currentTime, setCurrentTime] = useState<string>("2026-06-08 09:25:27");
-  const [kpiData, setKpiData] = useState(kpis);
-  const [freightRateData, setFreightRateData] = useState(freightRateTrends);
-  const [routeGrowthData, setRouteGrowthData] = useState(routeGrowthRates);
-  const [techAdoptionData, setTechAdoptionData] = useState(techAdoptions);
+  const [kpiData, setKpiData] = useState(activePeriod.kpis);
+  const [freightRateData, setFreightRateData] = useState(activePeriod.freightRateTrends);
+  const [routeGrowthData, setRouteGrowthData] = useState(activePeriod.routeGrowthRates);
+  const [techAdoptionData, setTechAdoptionData] = useState(activePeriod.techAdoptions);
   const [isPulling, setIsPulling] = useState<boolean>(false);
+  const [periodToast, setPeriodToast] = useState<boolean>(false);
 
   const tTelemetry = locales[lang].telemetry;
   const tNotification = locales[lang].notification;
@@ -39,6 +47,20 @@ export default function App() {
   const tDisclaimer = locales[lang].disclaimer;
   const tQa = locales[lang].qa;
   const tFooter = locales[lang].footer;
+
+  // Synchronize datasets whenever periodKey changes
+  useEffect(() => {
+    const periodInfo = getPeriodData(periodKey);
+    setKpiData(periodInfo.kpis);
+    setFreightRateData(periodInfo.freightRateTrends);
+    setRouteGrowthData(periodInfo.routeGrowthRates);
+    setTechAdoptionData(periodInfo.techAdoptions);
+    
+    // Show quick confirmation toast for period change
+    setPeriodToast(true);
+    const timer = setTimeout(() => setPeriodToast(false), 3000);
+    return () => clearTimeout(timer);
+  }, [periodKey]);
 
   // UTC Running Clock - Updated every second to maintain exact real-time reliability
   useEffect(() => {
@@ -56,62 +78,58 @@ export default function App() {
     const now = customNow || Date.now();
     setMockLatency(Math.floor(18 + Math.random() * 21));
 
-    // WCI index fluctuation (baseline 4828, sinusoidal drift)
+    const currentPeriodInfo = getPeriodData(periodKey);
+    const baseWCI = currentPeriodInfo.wciBaseRate;
+    const baseSCSI = currentPeriodInfo.scsiBaseIndex;
+    const baseEsg = currentPeriodInfo.esgComplianceRate;
+
+    // WCI index fluctuation around selected period base
     const driftWCI = Math.floor(Math.sin(now / 15000) * 16 + Math.cos(now / 7000) * 5);
-    const updatedWCI = 4828 + driftWCI;
+    const updatedWCI = baseWCI + driftWCI;
 
-    // SCSI pressure index fluctuation (baseline 1.65)
+    // SCSI pressure index fluctuation
     const driftSCSI = parseFloat((Math.sin(now / 19000) * 0.04 + Math.cos(now / 8000) * 0.01).toFixed(2));
-    const updatedSCSI = parseFloat((1.65 + driftSCSI).toFixed(2));
+    const updatedSCSI = parseFloat((baseSCSI + driftSCSI).toFixed(2));
 
-    // Smart tech adoption rate fluctuation (baseline 68.4)
-    const driftTech = parseFloat((Math.sin(now / 26000) * 0.28).toFixed(2));
-    const updatedTech = parseFloat((68.4 + driftTech).toFixed(1));
-
-    // ESG compliance rate (baseline 74.1)
+    // ESG compliance rate
     const driftEsg = parseFloat((Math.cos(now / 22000) * 0.18).toFixed(2));
-    const updatedEsg = parseFloat((74.1 + driftEsg).toFixed(1));
+    const updatedEsg = parseFloat((baseEsg + driftEsg).toFixed(1));
 
     // Sync state for primary numerical displays (KPI grid)
-    setKpiData(prev => prev.map((kpi, idx) => {
-      if (idx === 0) {
-        return { 
-          ...kpi, 
-          value: `$${updatedWCI.toLocaleString()}`, 
-          change: `${driftWCI >= 0 ? "+" : ""}${driftWCI} 美元/40箱 (4s 即时报价监控)`,
-          changeEn: `${driftWCI >= 0 ? "+" : ""}${driftWCI} USD/FEU (4s Spot Rate)`
-        };
-      }
-      if (idx === 1) {
-        return { 
-          ...kpi, 
-          value: `${updatedTech}%`, 
-          change: `${driftTech >= 0 ? "+" : ""}${driftTech}% 今日决策拟合`,
-          changeEn: `${driftTech >= 0 ? "+" : ""}${driftTech}% Today's AI sync`
-        };
-      }
-      if (idx === 2) {
-        return { 
-          ...kpi, 
-          value: `${updatedEsg}%`, 
-          change: `${driftEsg >= 0 ? "+" : ""}${driftEsg}% 可验证碳证明`,
-          changeEn: `${driftEsg >= 0 ? "+" : ""}${driftEsg}% Verified carbon proof`
-        };
-      }
-      if (idx === 3) {
-        return { 
-          ...kpi, 
-          value: updatedSCSI.toString(), 
-          change: driftSCSI >= 0 ? "压力微增" : "压力稳定",
-          changeEn: driftSCSI >= 0 ? "Pressure slightly up" : "Pressure stable"
-        };
-      }
-      return kpi;
-    }));
+    setKpiData(prev => {
+      if (!prev || prev.length < 4) return currentPeriodInfo.kpis;
+      return prev.map((kpi, idx) => {
+        if (idx === 0) {
+          return { 
+            ...kpi, 
+            value: `$${updatedWCI.toLocaleString()}`, 
+            change: `${driftWCI >= 0 ? "+" : ""}${driftWCI} 美元/FEU (4s 即时轮询)`,
+            changeEn: `${driftWCI >= 0 ? "+" : ""}${driftWCI} USD/FEU (4s Spot Sync)`
+          };
+        }
+        if (idx === 2) {
+          return { 
+            ...kpi, 
+            value: `${updatedEsg}%`, 
+            change: `${driftEsg >= 0 ? "+" : ""}${driftEsg}% 可验证碳证明`,
+            changeEn: `${driftEsg >= 0 ? "+" : ""}${driftEsg}% Verified carbon proof`
+          };
+        }
+        if (idx === 3) {
+          return { 
+            ...kpi, 
+            value: updatedSCSI.toString(), 
+            change: driftSCSI >= 0 ? "压力微增" : "压力稳定",
+            changeEn: driftSCSI >= 0 ? "Pressure slightly up" : "Pressure stable"
+          };
+        }
+        return kpi;
+      });
+    });
 
-    // Update Recharts Area Chart June value to synchronize with live WCI Rate state
+    // Update Recharts Area Chart active period trend value
     setFreightRateData(prev => prev.map((item, idx) => {
-      if (idx === 5) { // 6月 is the current active month (index 5)
+      if (idx === prev.length - 1) { // last month in trend is live
         return { ...item, rate2026: updatedWCI };
       }
       return item;
@@ -121,10 +139,12 @@ export default function App() {
     setRouteGrowthData(prev => prev.map((item, idx) => {
       const airMod = parseFloat((Math.sin(now / 9000 + idx) * 0.12).toFixed(1));
       const oceanMod = parseFloat((Math.cos(now / 11000 + idx) * 0.05).toFixed(1));
+      const baseAir = currentPeriodInfo.routeGrowthRates[idx]?.airGrowth || item.airGrowth;
+      const baseOcean = currentPeriodInfo.routeGrowthRates[idx]?.oceanGrowth || item.oceanGrowth;
       return {
         ...item,
-        airGrowth: parseFloat((routeGrowthRates[idx].airGrowth + airMod).toFixed(1)),
-        oceanGrowth: parseFloat((routeGrowthRates[idx].oceanGrowth + oceanMod).toFixed(1))
+        airGrowth: parseFloat((baseAir + airMod).toFixed(1)),
+        oceanGrowth: parseFloat((baseOcean + oceanMod).toFixed(1))
       };
     }));
 
@@ -132,14 +152,16 @@ export default function App() {
     setTechAdoptionData(prev => prev.map((item, idx) => {
       const rateMod = parseFloat((Math.sin(now / 13000 + idx) * 0.08).toFixed(1));
       const effMod = parseFloat((Math.cos(now / 15000 + idx) * 0.04).toFixed(1));
+      const baseAdopt = currentPeriodInfo.techAdoptions[idx]?.adoptionRate || item.adoptionRate;
+      const baseEff = currentPeriodInfo.techAdoptions[idx]?.efficiencyImprovement || item.efficiencyImprovement;
       return {
         ...item,
-        adoptionRate: Math.min(100, Math.max(0, parseFloat((techAdoptions[idx].adoptionRate + rateMod).toFixed(1)))),
-        efficiencyImprovement: Math.min(100, Math.max(0, parseFloat((techAdoptions[idx].efficiencyImprovement + effMod).toFixed(1))))
+        adoptionRate: Math.min(100, Math.max(0, parseFloat((baseAdopt + rateMod).toFixed(1)))),
+        efficiencyImprovement: Math.min(100, Math.max(0, parseFloat((baseEff + effMod).toFixed(1))))
       };
     }));
 
-  }, []);
+  }, [periodKey]);
 
   // Interval-timer effect trigger (every 4 seconds)
   useEffect(() => {
@@ -203,7 +225,7 @@ export default function App() {
   const renderActiveTabContent = () => {
     switch (activeTab) {
       case "overview":
-        return <ReportOverview kpiData={kpiData} lang={lang} />;
+        return <ReportOverview kpiData={kpiData} periodKey={periodKey} periodData={activePeriod} lang={lang} />;
       case "timeline":
         return <ReportTimeline lang={lang} />;
       case "performance":
@@ -226,16 +248,86 @@ export default function App() {
       case "outlook":
         return <FutureOutlook lang={lang} />;
       default:
-        return <ReportOverview kpiData={kpiData} lang={lang} />;
+        return <ReportOverview kpiData={kpiData} periodKey={periodKey} periodData={activePeriod} lang={lang} />;
     }
   };
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col font-sans">
-      <ReportHeader lang={lang} setLang={setLang} />
+      <ReportHeader 
+        lang={lang} 
+        setLang={setLang} 
+        periodKey={periodKey} 
+        setPeriodKey={setPeriodKey} 
+        onOpenReadme={() => setIsReadmeOpen(true)} 
+      />
+      <ReadmeModal isOpen={isReadmeOpen} onClose={() => setIsReadmeOpen(false)} lang={lang} />
 
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
         
+        {/* Reporting Period Quick Selector & Banner */}
+        <div className="bg-slate-900 text-white border border-slate-800 rounded-sm p-4 shadow-sm text-left">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+            <div className="flex items-center space-x-3">
+              <div className="p-2 bg-blue-600 rounded-sm">
+                <Calendar className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-mono font-bold text-blue-400 uppercase tracking-widest">
+                    {lang === "zh" ? "报告期选择 (季度 / 半年窗口)" : "Reporting Period Window"}
+                  </span>
+                  <span className="bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-[10px] font-mono px-1.5 py-0.2 rounded font-bold">
+                    {lang === "zh" ? "实时同步" : "Live Sync"}
+                  </span>
+                </div>
+                <p className="text-sm font-extrabold text-white mt-0.5">
+                  {lang === "zh" ? `当前查看: ${activePeriod.label} (${activePeriod.reportPeriodText})` : `Viewing: ${activePeriod.labelEn} (${activePeriod.reportPeriodTextEn})`}
+                </p>
+              </div>
+            </div>
+
+            {/* Quick Period Switch Pills */}
+            <div className="flex flex-wrap items-center gap-1.5">
+              {Object.values(periodsData).map((p) => {
+                const isActive = p.id === periodKey;
+                return (
+                  <button
+                    key={p.id}
+                    onClick={() => setPeriodKey(p.id)}
+                    className={`px-3 py-1.5 text-xs font-mono font-bold rounded-sm transition-all cursor-pointer border ${
+                      isActive
+                        ? "bg-blue-600 text-white border-blue-400 shadow-sm"
+                        : "bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-700 hover:text-white"
+                    }`}
+                  >
+                    {lang === "zh" ? p.label : p.labelEn}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Period Change Confirmation Toast */}
+          <AnimatePresence>
+            {periodToast && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                className="mt-3 pt-3 border-t border-slate-800 flex items-center gap-2 text-xs text-emerald-400 font-mono"
+              >
+                <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                <span>
+                  {lang === "zh" 
+                    ? `已成功切换至 [${activePeriod.label}]！所有运价指数、行业KPI及深度洞察已按该周期重新计算并实时呈现。` 
+                    : `Switched to [${activePeriod.labelEn}]! All freight indices, KPIs, and analysis metrics have been dynamically re-aligned.`}
+                </span>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+
         {/* Dynamic Telemetry MUX Controller Bar */}
         <div className="bg-white border border-slate-300 rounded-sm p-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 shadow-xs">
           <div className="flex items-center gap-3 text-left">
@@ -388,7 +480,7 @@ export default function App() {
               {tQa.customSearchSub}
             </p>
           </div>
-          <InteractiveQA lang={lang} />
+          <InteractiveQA lang={lang} periodKey={periodKey} />
         </div>
 
       </main>
