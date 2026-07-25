@@ -31,9 +31,21 @@ function getAiClient(): GoogleGenAI {
   return aiClient;
 }
 
-// Endpoint to serve README.md
+// Endpoint to serve README.md and hero banner assets
 app.get("/README.md", (req, res) => {
   res.sendFile(path.join(process.cwd(), "README.md"));
+});
+app.get("/public/hero-banner.gif", (req, res) => {
+  res.sendFile(path.join(process.cwd(), "public", "hero-banner.gif"));
+});
+app.get("/public/hero-banner.svg", (req, res) => {
+  res.sendFile(path.join(process.cwd(), "public", "hero-banner.svg"));
+});
+app.get("/hero-banner.gif", (req, res) => {
+  res.sendFile(path.join(process.cwd(), "public", "hero-banner.gif"));
+});
+app.get("/hero-banner.svg", (req, res) => {
+  res.sendFile(path.join(process.cwd(), "public", "hero-banner.svg"));
 });
 
 // 1. API Endpoint for AI grounded supply chain search and analysis

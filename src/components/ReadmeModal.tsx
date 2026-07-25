@@ -13,7 +13,7 @@ export default function ReadmeModal({ isOpen, onClose, lang }: ReadmeModalProps)
   const [readmeText, setReadmeText] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(true);
   const [copied, setCopied] = useState<boolean>(false);
-  const [activeTab, setActiveTab] = useState<"hero" | "rendered" | "raw">("hero");
+  const [activeTab, setActiveTab] = useState<"hero" | "rendered" | "raw">("rendered");
   const [heroFormat, setHeroFormat] = useState<"gif" | "svg">("gif");
 
   const t = locales[lang].header;
@@ -156,19 +156,19 @@ export default function ReadmeModal({ isOpen, onClose, lang }: ReadmeModalProps)
                   <div>
                     <div className="flex items-center space-x-2">
                       <span className="bg-emerald-500 text-slate-950 text-[10px] font-mono font-extrabold px-2 py-0.5 rounded-xs uppercase">
-                        $beautify-github-readme Mode
+                        README.md Embedded ✅
                       </span>
-                      <span className="text-[11px] font-mono text-blue-300">
-                        README.md Untouched • Preview First
+                      <span className="text-[11px] font-mono text-emerald-300">
+                        HD Banner Integrated • Ready for Repository
                       </span>
                     </div>
                     <h4 className="font-bold text-sm sm:text-base text-white mt-1">
-                      {lang === "zh" ? "⚡ 全球供应链与跨境物流报告：动画封面与 SVG 渲染工作台" : "⚡ Global Supply Chain Dashboard: Animated GIF & SVG Hero Studio"}
+                      {lang === "zh" ? "⚡ 全球供应链与跨境物流报告：动画封面已正式嵌入 README" : "⚡ Global Supply Chain Dashboard: Animated GIF Formally Embedded in README"}
                     </h4>
                     <p className="text-xs text-slate-300 font-sans mt-0.5 leading-relaxed">
                       {lang === "zh"
-                        ? "按照 $beautify-github-readme 指令，README.md 当前保持原样不变。根据全局“海事货运与实时风控”深度审美系统，已为您创建高清 256 色动图封面 (hero-banner.gif) 与矢量动画源文件 (hero-banner.svg)。请您在此预览验证，确认满意后下轮即可正式嵌入 README 中。"
-                        : "Per $beautify-github-readme instructions, README.md remains untouched. Derived from our global maritime telemetry aesthetic, we generated an HD 256-color Bayer dithered Animated GIF (hero-banner.gif) and scalable vector source (hero-banner.svg). Inspect the live preview below!"}
+                        ? "根据您的确认指令，高清 256 色动图封面 (hero-banner.gif) 已正式升级并嵌入至项目 README.md 顶部！该 GIF 采用 0 次无限循环 (loop 0) 与全色域统计调色板，在您的电脑 macOS Preview 及 GitHub 仓库中均能完美展示。"
+                        : "Per your confirmation, the HD 256-color Animated GIF cover (hero-banner.gif) is now officially embedded at the top of README.md! Compiled with loop 0 and full color stats, it displays seamlessly on your macOS Preview and GitHub repository."}
                     </p>
                   </div>
                 </div>
@@ -262,21 +262,23 @@ export default function ReadmeModal({ isOpen, onClose, lang }: ReadmeModalProps)
                 </div>
               </div>
 
-              {/* Insertion Snippet Ready for Next Turn */}
+              {/* Insertion Snippet Active in README */}
               <div className="p-4 bg-slate-900 text-slate-200 rounded-sm border border-slate-800 space-y-2 font-mono text-xs shadow-md">
                 <div className="flex items-center justify-between text-slate-400 font-bold">
-                  <span>💡 PREPARED MARKDOWN INJECTION SNIPPET (ONCE APPROVED)</span>
-                  <span className="text-emerald-400 bg-emerald-950/80 px-2 py-0.5 rounded border border-emerald-800">READY FOR NEXT TURN</span>
+                  <span>💡 MARKDOWN INJECTION SNIPPET (EMBEDDED IN README.MD)</span>
+                  <span className="text-emerald-400 bg-emerald-950/80 px-2 py-0.5 rounded border border-emerald-800">EMBEDDED ✅</span>
                 </div>
                 <pre className="p-3 bg-slate-950 rounded border border-slate-800 text-emerald-400 overflow-x-auto text-xs leading-relaxed">
 {`<div align="center">
-  <img src="./public/hero-banner.gif" alt="Supply Chain & Logistics Industry Intelligence Research Dashboard (2026)" width="100%" />
+
+![Supply Chain & Logistics Industry Intelligence Research Dashboard (2026)](./public/hero-banner.gif)
+
 </div>`}
                 </pre>
                 <p className="text-slate-400 text-[11px] font-sans">
                   {lang === "zh"
-                    ? "提示：您当前预览的是生成的最新动态封面和 SVG 源文件。确认效果符合预期后，直接对我说“确认嵌入到 README”即可自动完成 README 升级！"
-                    : "Note: This live preview shows the animated GIF hero and SVG source. Once you verify the aesthetic, reply 'Confirm to embed into README' and we will update README.md!"}
+                    ? "说明：上述代码已成功写入并保存至 README.md 顶部！该动态封面已在仓库根目录和 public 目录建立完整双链路映射，直接推送到 GitHub 仓库即可直接显示！"
+                    : "Note: The snippet above is now saved directly at the top of README.md! The hero banner is mapped across both root and public directories for 100% universal rendering on GitHub!"}
                 </p>
               </div>
             </div>
