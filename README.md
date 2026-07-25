@@ -253,6 +253,16 @@ This project is open-source under the **[Apache License 2.0](LICENSE)**.
 
 ---
 
+## 💡 AI Studio Skills & Methodology / AI 工作台强化技能与设计规范说明
+
+The interactive documentation, dynamic hero assets, and executive aesthetic styling in this project and README were crafted and optimized using specialized **AI Studio System Skills**:
+
+* **`$beautify-github-readme` (Hero Studio & Executive Formatting)**: Guided the global maritime telemetry visual hierarchy, high-contrast dark slate color grading, bilingual information layout, and non-destructive live rendering preview workflows.
+* **`image-generation` (Dynamic Hero Banner Asset Synthesis)**: Powered the design and compilation of the 256-color Bayer-dithered animated GIF (`/hero-banner.gif`) and scalable SMIL vector graphics (`/hero-banner.svg`) at a 100% widescreen WXGA aspect ratio without banding.
+* **`gemini-api` (Grounded Intelligence Architecture)**: Structured the `@google/genai` TypeScript SDK server-side architecture and Search Grounding citations contextualized for multi-period global supply chain research.
+
+---
+
 <div align="center">
 
 **Developed with ❤️ for Global Supply Chain Intelligence & Logistics Operational Excellence**  

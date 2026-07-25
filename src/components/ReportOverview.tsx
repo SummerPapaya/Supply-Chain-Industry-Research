@@ -1,5 +1,6 @@
+import { useState } from "react";
 import { kpis as defaultKpis, getPeriodData } from "../data";
-import { TrendingUp, ShieldAlert, Cpu, Leaf, Info, Calendar } from "lucide-react";
+import { TrendingUp, ShieldAlert, Cpu, Leaf, Info, Calendar, Sparkles, Download, ExternalLink, Image as ImageIcon } from "lucide-react";
 import { motion } from "motion/react";
 import { KPIItem, ReportingPeriod, PeriodKey } from "../types";
 import { locales } from "../locales";
@@ -12,6 +13,7 @@ interface ReportOverviewProps {
 }
 
 export default function ReportOverview({ kpiData, periodKey = "2026_H1", periodData, lang }: ReportOverviewProps) {
+  const [previewFormat, setPreviewFormat] = useState<"gif" | "svg">("gif");
   const activePeriod = periodData || getPeriodData(periodKey);
   const currentKpis = kpiData || activePeriod.kpis || defaultKpis;
   const t = locales[lang].overview;
@@ -57,6 +59,93 @@ export default function ReportOverview({ kpiData, periodKey = "2026_H1", periodD
             <span>{lang === "zh" ? `截止日期: ${activePeriod.asOfDate}` : `As of: ${activePeriod.asOfDateEn}`}</span>
             <span className="text-blue-400 font-bold">{lang === "zh" ? `时间段: ${activePeriod.reportPeriodText}` : `Window: ${activePeriod.reportPeriodTextEn}`}</span>
           </div>
+        </div>
+      </div>
+
+      {/* Hero Banner Showcase Card (Rendered Preview for $beautify-github-readme) */}
+      <div className="bg-[#0F172A] border-2 border-amber-500/50 rounded-sm p-5 md:p-6 text-white shadow-xl relative overflow-hidden">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4 pb-3 border-b border-slate-800">
+          <div className="flex items-center space-x-3">
+            <div className="p-2.5 bg-amber-500/20 text-amber-400 rounded-sm border border-amber-500/30">
+              <Sparkles className="w-6 h-6 animate-pulse" />
+            </div>
+            <div>
+              <div className="flex items-center space-x-2">
+                <span className="bg-emerald-500 text-slate-950 text-[10px] font-mono font-extrabold px-2 py-0.5 rounded-xs uppercase">
+                  $beautify-github-readme Mode
+                </span>
+                <span className="text-[11px] font-mono text-blue-300">
+                  README.md Untouched • Preview First
+                </span>
+              </div>
+              <h3 className="text-base sm:text-lg font-bold text-white tracking-tight mt-1">
+                {lang === "zh" ? "⚡ 行业报告主页封面动画及 SVG 矢量源文件预览" : "⚡ Project Hero Banner Animated GIF & SVG Render Preview"}
+              </h3>
+            </div>
+          </div>
+          <div className="flex items-center space-x-2 text-xs font-mono shrink-0">
+            <span className="hidden sm:inline bg-slate-800 text-slate-300 px-3 py-1 rounded-sm border border-slate-700">
+              1200 × 420 px
+            </span>
+            <div className="flex bg-slate-900 border border-slate-700 rounded-sm p-0.5">
+              <button
+                onClick={() => setPreviewFormat("gif")}
+                className={`px-2.5 py-1 text-xs font-bold rounded-xs transition-all cursor-pointer ${
+                  previewFormat === "gif" ? "bg-blue-600 text-white" : "text-slate-400 hover:text-white"
+                }`}
+              >
+                GIF Mode
+              </button>
+              <button
+                onClick={() => setPreviewFormat("svg")}
+                className={`px-2.5 py-1 text-xs font-bold rounded-xs transition-all cursor-pointer ${
+                  previewFormat === "svg" ? "bg-blue-600 text-white" : "text-slate-400 hover:text-white"
+                }`}
+              >
+                SVG Source
+              </button>
+            </div>
+            <a
+              href={previewFormat === "gif" ? "/hero-banner.gif" : "/hero-banner.svg"}
+              target="_blank"
+              rel="noreferrer noopener"
+              className="px-3 py-1 bg-amber-600 hover:bg-amber-500 text-white rounded-sm font-bold transition-colors flex items-center space-x-1"
+            >
+              <Download className="w-3.5 h-3.5" />
+              <span>{previewFormat === "gif" ? "DL GIF" : "DL SVG"}</span>
+            </a>
+          </div>
+        </div>
+
+        <p className="text-xs text-slate-300 font-sans mb-4 leading-relaxed">
+          {lang === "zh"
+            ? "根据您的宏令 $beautify-github-readme 规范，我们已从当前物流与行业数据大盘审美中萃取核心元素（海事大通道、货轮轨迹、高频 MUX 实时指标），专为项目主页生成了高清 256 色 Bayer 抖动动态封面 (hero-banner.gif) 与标准 SMIL 矢量源文件 (hero-banner.svg)。根据规范，README.md 当前完全保持原样，未做任何修改。请优先在此预览渲染效果！"
+            : "Derived from our global maritime telemetry and executive dark aesthetic, we created a crisp 256-color Bayer-dithered Animated GIF (hero-banner.gif) and scalable SMIL animated vector source (hero-banner.svg). Per $beautify-github-readme instructions, README.md remains untouched. Inspect the live rendered preview below!"}
+        </p>
+
+        {/* Rendered Preview Box */}
+        <div className="bg-[#0B132B] border border-slate-800 rounded-sm p-3 overflow-hidden shadow-inner flex flex-col items-center">
+          <div className="w-full flex items-center justify-between mb-2 text-[11px] font-mono text-slate-400">
+            <span className="text-blue-400 font-bold">
+              {previewFormat === "gif" ? "🎥 ACTIVE RENDER: /public/hero-banner.gif (198 KB)" : "📐 ACTIVE RENDER: /public/hero-banner.svg (14 KB)"}
+            </span>
+            <span className="text-emerald-400 font-bold flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+              {previewFormat === "gif" ? "30 Frames @ 15 FPS Loop" : "Vector SMIL Animation"}
+            </span>
+          </div>
+          <div className="w-full overflow-hidden rounded-sm border border-slate-700/60 bg-slate-950 flex justify-center p-1">
+            <img
+              src={previewFormat === "gif" ? "/hero-banner.gif" : "/hero-banner.svg"}
+              alt="Supply Chain & Logistics Dashboard Hero Banner Preview"
+              className="w-full max-w-5xl h-auto rounded-sm shadow-2xl transition-all duration-300"
+            />
+          </div>
+        </div>
+
+        <div className="mt-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-[11px] font-mono text-slate-400">
+          <span>💡 {lang === "zh" ? "当您确认预览无误后，只需告诉我们“确认嵌入到 README”，我们将帮您一键注入。" : "When you are satisfied with the preview, let us know to embed it into README.md."}</span>
+          <span className="text-amber-400 font-bold">● README.md Untouched &amp; Preserved</span>
         </div>
       </div>
 

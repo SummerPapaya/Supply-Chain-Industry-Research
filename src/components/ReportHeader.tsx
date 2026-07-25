@@ -1,5 +1,5 @@
 import { locales } from "../locales";
-import { FileText, Calendar, BookOpen, Clock, ChevronDown } from "lucide-react";
+import { FileText, Calendar, BookOpen, Clock, ChevronDown, Sparkles } from "lucide-react";
 import { PeriodKey, ReportingPeriod } from "../types";
 import { periodsData } from "../data";
 
@@ -72,6 +72,19 @@ export default function ReportHeader({
                 <ChevronDown className="w-3.5 h-3.5 text-slate-500 absolute right-2 top-2 pointer-events-none" />
               </div>
             </div>
+
+            {/* Hero Studio Button */}
+            {onOpenReadme && (
+              <button
+                onClick={onOpenReadme}
+                className="flex items-center space-x-1.5 px-3 py-1.5 text-xs font-bold text-amber-300 bg-slate-900 hover:bg-slate-800 border border-amber-500/50 rounded-sm transition-colors shadow-sm cursor-pointer animate-pulse"
+                title="View Hero Banner Studio ($beautify)"
+              >
+                <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                <span className="hidden sm:inline">{lang === "zh" ? "🎨 封面及渲染工作台" : "🎨 Hero Studio"}</span>
+                <span className="sm:hidden">🎨 Hero</span>
+              </button>
+            )}
 
             {/* README Preview button */}
             {onOpenReadme && (
