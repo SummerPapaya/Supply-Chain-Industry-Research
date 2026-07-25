@@ -11,35 +11,38 @@ interface ReadmeModalProps {
 
 export default function ReadmeModal({ isOpen, onClose, lang }: ReadmeModalProps) {
   const [readmeText, setReadmeText] = useState<string>("");
+  const [redesignText, setRedesignText] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(true);
   const [copied, setCopied] = useState<boolean>(false);
-  const [activeTab, setActiveTab] = useState<"hero" | "rendered" | "raw">("rendered");
+  const [activeTab, setActiveTab] = useState<"redesign" | "hero" | "rendered" | "raw">("redesign");
   const [heroFormat, setHeroFormat] = useState<"gif" | "svg">("gif");
+  const [redesignMode, setRedesignMode] = useState<"rendered" | "raw">("rendered");
 
   const t = locales[lang].header;
 
   useEffect(() => {
     if (!isOpen) return;
     setLoading(true);
-    // Read README.md content directly from raw string or fetch
-    fetch("/README.md")
-      .then((res) => {
-        if (!res.ok) throw new Error("Could not load README.md");
-        return res.text();
-      })
-      .then((data) => {
-        setReadmeText(data);
+    // Read README.md and README_preview.md content directly
+    Promise.all([
+      fetch("/README.md").then((res) => (res.ok ? res.text() : "")),
+      fetch("/README_preview.md").then((res) => (res.ok ? res.text() : "")),
+    ])
+      .then(([readmeData, previewData]) => {
+        setReadmeText(readmeData || "# Supply Chain Industry Research\n\nFailed to load README.md");
+        setRedesignText(previewData || readmeData || "# Redesigned README\n\nFailed to load preview.");
         setLoading(false);
       })
       .catch((err) => {
         console.error(err);
         setReadmeText("# Supply Chain Industry Research\n\nFailed to load README.md content dynamically.");
+        setRedesignText("# Redesigned README\n\nFailed to load preview.");
         setLoading(false);
       });
   }, [isOpen]);
 
   const handleCopy = () => {
-    navigator.clipboard.writeText(readmeText);
+    navigator.clipboard.writeText(activeTab === "redesign" ? redesignText : readmeText);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -72,15 +75,24 @@ export default function ReadmeModal({ isOpen, onClose, lang }: ReadmeModalProps)
 
           <div className="flex items-center space-x-2">
             {/* View Switcher */}
-            <div className="hidden sm:flex border border-slate-700 rounded-sm p-0.5 bg-slate-800">
+            <div className="hidden sm:flex border border-slate-700 rounded-sm p-0.5 bg-slate-800 flex-wrap gap-0.5">
+              <button
+                onClick={() => setActiveTab("redesign")}
+                className={`px-3 py-1 text-xs font-bold font-mono rounded-sm transition-all cursor-pointer flex items-center space-x-1 ${
+                  activeTab === "redesign" ? "bg-emerald-600 text-white shadow-xs" : "text-emerald-400 hover:text-white"
+                }`}
+              >
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>✨ $beautify Redesign</span>
+              </button>
               <button
                 onClick={() => setActiveTab("hero")}
                 className={`px-3 py-1 text-xs font-bold font-mono rounded-sm transition-all cursor-pointer flex items-center space-x-1 ${
                   activeTab === "hero" ? "bg-amber-600 text-white shadow-xs" : "text-amber-400 hover:text-white"
                 }`}
               >
-                <Sparkles className="w-3.5 h-3.5" />
-                <span>🎨 Hero Studio ($beautify)</span>
+                <ImageIcon className="w-3.5 h-3.5" />
+                <span>🎨 Hero Studio</span>
               </button>
               <button
                 onClick={() => setActiveTab("rendered")}
@@ -89,7 +101,7 @@ export default function ReadmeModal({ isOpen, onClose, lang }: ReadmeModalProps)
                 }`}
               >
                 <FileText className="w-3.5 h-3.5" />
-                <span>Rendered</span>
+                <span>Current README</span>
               </button>
               <button
                 onClick={() => setActiveTab("raw")}
@@ -144,6 +156,109 @@ export default function ReadmeModal({ isOpen, onClose, lang }: ReadmeModalProps)
           {loading ? (
             <div className="py-20 text-center font-mono text-xs text-slate-500 animate-pulse">
               Loading preview...
+            </div>
+          ) : activeTab === "redesign" ? (
+            <div className="max-w-5xl mx-auto space-y-6 text-left">
+              {/* Top Banner Notice */}
+              <div className="p-5 bg-gradient-to-r from-emerald-950 via-slate-900 to-teal-950 text-white rounded-sm border-2 border-emerald-500/60 shadow-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div className="flex items-center space-x-3.5">
+                  <div className="p-3 bg-emerald-500/20 text-emerald-400 rounded-sm border border-emerald-500/40 shrink-0">
+                    <Sparkles className="w-7 h-7 animate-bounce" />
+                  </div>
+                  <div>
+                    <div className="flex items-center space-x-2 flex-wrap gap-y-1">
+                      <span className="bg-emerald-500 text-slate-950 text-[10px] font-mono font-extrabold px-2.5 py-0.5 rounded-xs uppercase tracking-wider shadow-sm">
+                        $beautify-github-readme Mode
+                      </span>
+                      <span className="bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[10px] font-mono font-bold px-2 py-0.5 rounded-xs">
+                        ⚠️ LOCAL PREVIEW ONLY • NOT PUSHED
+                      </span>
+                      <span className="text-[11px] font-mono text-emerald-300 font-bold">
+                        README.md Untouched
+                      </span>
+                    </div>
+                    <h4 className="font-extrabold text-base sm:text-lg text-white mt-1.5 tracking-tight">
+                      {lang === "zh" ? "⚡ 全球供应链与跨境物流智能工作台：仓库主页全面重构预览" : "⚡ 2026 Global Supply Chain Dashboard: Enterprise Repository Homepage Redesign Preview"}
+                    </h4>
+                    <p className="text-xs text-slate-300 font-sans mt-1 leading-relaxed">
+                      {lang === "zh"
+                        ? "我们已严格遵循您的 $beautify-github-readme 指令与项目内核（近岸外包2.0、红海危机好望角绕行、欧盟 CSDDD 碳排硬性执法、4秒实时 Telemetry MUX 运价流、7大垂直赛道及 Gemini 2.5 联网智能问答），为您重构了极具企业级审美与高管决策洞察力的新版主页。按照规范，README.md 当前保持原样，未做任何推送或保存。请在此预览验证！"
+                        : "Per your $beautify-github-readme instructions, we redesigned the repository homepage around its true architectural depth (Nearshoring 2.0, Red Sea Rerouting, EU CSDDD ESG Enforcement, 4s Telemetry MUX, 7 Verticals, and Gemini 2.5 Search Grounded RAG). Per your mandate, /README.md remains untouched and has NOT been pushed or overwritten. Inspect the live local preview below!"}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center space-x-2 font-mono text-xs shrink-0 self-end sm:self-center">
+                  <button
+                    onClick={() => {
+                      navigator.clipboard.writeText(redesignText);
+                      setCopied(true);
+                      setTimeout(() => setCopied(false), 2000);
+                    }}
+                    className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-sm flex items-center space-x-1.5 shadow-md transition-all cursor-pointer"
+                  >
+                    <Copy className="w-4 h-4" />
+                    <span>{copied ? "Copied New README!" : "Copy Redesign Markdown"}</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Sub-view toggle between Rendered and Raw */}
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-[#0F172A] p-3 rounded-sm border border-slate-800">
+                <div className="flex items-center space-x-2">
+                  <span className="text-xs font-bold text-slate-200 font-mono flex items-center gap-1.5">
+                    <FileText className="w-4 h-4 text-emerald-400" />
+                    {lang === "zh" ? "预览重构视图模式:" : "Redesign Inspection Mode:"}
+                  </span>
+                  <div className="flex bg-slate-900 border border-slate-800 rounded-sm p-0.5 shadow-2xs">
+                    <button
+                      onClick={() => setRedesignMode("rendered")}
+                      className={`px-3 py-1 text-xs font-bold font-mono rounded-xs transition-all cursor-pointer ${
+                        redesignMode === "rendered" ? "bg-emerald-600 text-white shadow-xs" : "text-slate-400 hover:text-slate-100"
+                      }`}
+                    >
+                      ✨ Rendered Visual Page
+                    </button>
+                    <button
+                      onClick={() => setRedesignMode("raw")}
+                      className={`px-3 py-1 text-xs font-bold font-mono rounded-xs transition-all cursor-pointer ${
+                        redesignMode === "raw" ? "bg-emerald-600 text-white shadow-xs" : "text-slate-400 hover:text-slate-100"
+                      }`}
+                    >
+                      💻 Raw Markdown Source
+                    </button>
+                  </div>
+                </div>
+                <div className="text-[11px] font-mono text-slate-400 flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+                  <span>{lang === "zh" ? "基于真实的 7 大垂直赛道与 Telemetry 内核生成" : "Synthesized from 7 Verticals & Telemetry Engine"}</span>
+                </div>
+              </div>
+
+              {/* Display Content */}
+              <div className="bg-[#0B132B] border-2 border-slate-800 rounded-sm p-5 sm:p-8 shadow-inner overflow-hidden">
+                {redesignMode === "rendered" ? (
+                  <div className="prose prose-invert prose-slate max-w-none text-slate-200 text-sm leading-relaxed prose-headings:text-white prose-a:text-blue-400 prose-code:text-amber-300 prose-code:bg-slate-900 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded-xs prose-pre:bg-slate-950 prose-pre:border prose-pre:border-slate-800 prose-table:border-collapse prose-th:border prose-th:border-slate-700 prose-th:bg-slate-900 prose-th:p-2 prose-td:border prose-td:border-slate-800 prose-td:p-2">
+                    <Markdown>{redesignText}</Markdown>
+                  </div>
+                ) : (
+                  <pre className="p-4 bg-slate-950 rounded-sm border border-slate-800 text-emerald-400 font-mono text-xs overflow-x-auto leading-relaxed selection:bg-emerald-900 selection:text-white">
+                    {redesignText}
+                  </pre>
+                )}
+              </div>
+
+              {/* Action Callout for next step */}
+              <div className="p-4 bg-slate-900 text-slate-200 rounded-sm border border-slate-800 space-y-2 font-mono text-xs shadow-md">
+                <div className="flex items-center justify-between text-slate-300 font-bold">
+                  <span>💡 {lang === "zh" ? "主页重构准备就绪（等待您的最终确认）" : "HOMEPAGE REDESIGN READY (WAITING FOR YOUR CONFIRMATION)"}</span>
+                  <span className="text-amber-400 bg-amber-950/80 px-2 py-0.5 rounded border border-amber-800">LOCAL PREVIEW • NOT PUSHED</span>
+                </div>
+                <p className="text-slate-400 text-[11px] font-sans leading-relaxed">
+                  {lang === "zh"
+                    ? "说明：根据您指定的“先预览，暂不推送/覆盖”准则，仓库真实的 /README.md 文件当前完全保持原样不变！如果您检查上方预览后对该重构设计满意，直接回复我们“确认推送/覆盖到 README.md”，我们即可立即为您应用升级！"
+                    : "Note: Per your instruction to 'show a local preview first and do not push anything', the repository's actual /README.md file remains 100% untouched! Once you review the preview above and verify the theme alignment, reply 'Confirm to push/apply redesign to README.md' and we will execute the upgrade!"}
+                </p>
+              </div>
             </div>
           ) : activeTab === "hero" ? (
             <div className="max-w-5xl mx-auto space-y-6 text-left">

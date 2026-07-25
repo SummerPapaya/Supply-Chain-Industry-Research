@@ -31,9 +31,15 @@ function getAiClient(): GoogleGenAI {
   return aiClient;
 }
 
-// Endpoint to serve README.md and hero banner assets
+// Endpoint to serve README.md, README_preview.md, and hero banner assets
 app.get("/README.md", (req, res) => {
   res.sendFile(path.join(process.cwd(), "README.md"));
+});
+app.get("/README_preview.md", (req, res) => {
+  res.sendFile(path.join(process.cwd(), "README_preview.md"));
+});
+app.get("/public/README_preview.md", (req, res) => {
+  res.sendFile(path.join(process.cwd(), "public", "README_preview.md"));
 });
 app.get("/public/hero-banner.gif", (req, res) => {
   res.sendFile(path.join(process.cwd(), "public", "hero-banner.gif"));

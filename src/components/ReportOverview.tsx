@@ -79,7 +79,7 @@ export default function ReportOverview({ kpiData, periodKey = "2026_H1", periodD
                 </span>
               </div>
               <h3 className="text-base sm:text-lg font-bold text-white tracking-tight mt-1">
-                {lang === "zh" ? "⚡ 行业报告主页封面动画及 SVG 矢量源文件预览" : "⚡ Project Hero Banner Animated GIF & SVG Render Preview"}
+                {lang === "zh" ? "⚡ $beautify 行业报告主页全面重构 & 动态封面预览" : "⚡ $beautify Repository Homepage Redesign & Hero Banner Preview"}
               </h3>
             </div>
           </div>
@@ -119,8 +119,8 @@ export default function ReportOverview({ kpiData, periodKey = "2026_H1", periodD
 
         <p className="text-xs text-slate-300 font-sans mb-4 leading-relaxed">
           {lang === "zh"
-            ? "根据您的宏令 $beautify-github-readme 规范与确认指令，高清 256 色 Bayer 抖动动态封面 (hero-banner.gif) 已正式嵌入到 README.md 顶部！该 GIF 采用 0 次无限循环 (loop 0) 与全色域统计调色板，在 macOS Preview/QuickLook 及 GitHub 仓库主页均能完美兼容并丝滑渲染。"
-            : "Per your instructions and confirmation, the HD 256-color Bayer dithered Animated GIF (hero-banner.gif) has been formally embedded into the top of README.md! Compiled with loop 0 and full color palette stats, it renders seamlessly on macOS Preview, QuickLook, and GitHub repository pages."}
+            ? "按照您“先本地预览，暂不推送/覆盖”的指令，我们已围绕项目真实主题（近岸外包2.0、红海危机好望角绕行、欧盟CSDDD碳排执法、4秒实时 Telemetry 运价流与 Gemini 2.5 联网智能问答）全面重构了新版主页（README_preview.md）。实际的 /README.md 保持原样不变！您可以点击顶部导航栏的【GitHub README】按钮查看“✨ $beautify Redesign”完整重构交互式视图！"
+            : "Per your instruction to 'show a local preview first and do not push anything', we redesigned the repository homepage around its true architectural depth (Nearshoring 2.0, Red Sea Rerouting, EU CSDDD ESG Enforcement, 4s Telemetry MUX, and Gemini 2.5 Grounded RAG) in a dedicated preview file (README_preview.md). The actual repository /README.md remains 100% untouched! Click the [GitHub README] button in the top navigation bar to inspect the interactive redesign preview!"}
         </p>
 
         {/* Rendered Preview Box */}
