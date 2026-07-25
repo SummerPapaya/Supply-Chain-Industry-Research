@@ -270,7 +270,7 @@ export default function ReadmeModal({ isOpen, onClose, lang }: ReadmeModalProps)
                 </div>
                 <pre className="p-3 bg-slate-950 rounded border border-slate-800 text-emerald-400 overflow-x-auto text-xs leading-relaxed">
 {`<div align="center">
-  <img src="public/hero-banner.gif" alt="Supply Chain & Logistics Industry Intelligence Research Dashboard (2026)" width="100%" />
+  <img src="./public/hero-banner.gif" alt="Supply Chain & Logistics Industry Intelligence Research Dashboard (2026)" width="100%" />
 </div>`}
                 </pre>
                 <p className="text-slate-400 text-[11px] font-sans">
