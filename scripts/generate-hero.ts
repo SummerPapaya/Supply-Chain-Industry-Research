@@ -292,10 +292,10 @@ async function main() {
   }
   console.log(`✅ Rendered ${totalFrames} PNG frames.`);
 
-  // 3. Compile to Animated GIF using ffmpeg with high-quality palette filter
+  // 3. Compile to Animated GIF using ffmpeg with high-quality palette filter and loop 0 for universal compatibility (macOS Preview/QuickLook)
   const gifPath = path.join(publicDir, "hero-banner.gif");
   console.log("⏳ Compiling frames into high-definition animated GIF using ffmpeg...");
-  const cmd = `ffmpeg -y -framerate 15 -i "${tmpDir}/frame_%03d.png" -filter_complex "[0:v] split [a][b];[a] palettegen=stats_mode=diff [p];[b][p] paletteuse=dither=bayer:bayer_scale=5" "${gifPath}"`;
+  const cmd = `ffmpeg -y -framerate 15 -i "${tmpDir}/frame_%03d.png" -filter_complex "[0:v] split [a][b];[a] palettegen=stats_mode=full:max_colors=256 [p];[b][p] paletteuse=dither=bayer:bayer_scale=5" -loop 0 "${gifPath}"`;
   execSync(cmd, { stdio: "inherit" });
 
   // Clean up temporary frame directory
