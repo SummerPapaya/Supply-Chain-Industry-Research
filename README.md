@@ -1,5 +1,7 @@
 <div align="center">
 
+![Supply Chain & Logistics Industry Intelligence Research Dashboard (2026)](./public/hero-banner.gif)
+
 # 🚢 Supply Chain & Logistics Industry Intelligence Research Dashboard (2026)
 ### 2026年全球供应链与跨境物流行业研究报告 & Gemini 智能分析工作台
 
