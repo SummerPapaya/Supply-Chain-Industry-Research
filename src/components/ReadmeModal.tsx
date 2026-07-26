@@ -295,7 +295,7 @@ export default function ReadmeModal({ isOpen, onClose, lang }: ReadmeModalProps)
                     className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-sm flex items-center space-x-1.5 shadow-sm transition-all"
                   >
                     <Download className="w-3.5 h-3.5" />
-                    <span>GIF (198 KB)</span>
+                    <span>GIF (1200×420)</span>
                   </a>
                   <a
                     href="/hero-banner.svg"

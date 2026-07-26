@@ -1,0 +1,7 @@
+# Keep hero/binary image assets from being UTF-8 mangled in git pipelines
+*.gif binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.webp binary
+*.ico binary

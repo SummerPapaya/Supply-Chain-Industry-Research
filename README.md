@@ -260,7 +260,7 @@ This project is open-source under the **[Apache License 2.0](LICENSE)**.
 The interactive documentation, dynamic hero assets, and executive aesthetic styling in this project and README were crafted and optimized using specialized **AI Studio System Skills**:
 
 * **`$beautify-github-readme` (Hero Studio & Executive Formatting)**: Guided the global maritime telemetry visual hierarchy, high-contrast dark slate color grading, bilingual information layout, and non-destructive live rendering preview workflows.
-* **`image-generation` (Dynamic Hero Banner Asset Synthesis)**: Powered the design and compilation of the 256-color Bayer-dithered animated GIF (`/hero-banner.gif`) and scalable SMIL vector graphics (`/hero-banner.svg`) at a 100% widescreen WXGA aspect ratio without banding.
+* **`image-generation` (Dynamic Hero Banner Asset Synthesis)**: Powered the design and compilation of the 256-color Bayer-dithered animated GIF (`/public/hero-banner.gif`, 1200×420, loop forever) used in this README, plus a SMIL-animated SVG source (`/public/hero-banner.svg`) for direct/browser viewing. GitHub README embeds the GIF because Camo/image proxy rendering does not reliably play SVG SMIL animation.
 * **`gemini-api` (Grounded Intelligence Architecture)**: Structured the `@google/genai` TypeScript SDK server-side architecture and Search Grounding citations contextualized for multi-period global supply chain research.
 
 ---

@@ -1,6 +1,7 @@
 import fs from "fs";
 import path from "path";
 import { execSync } from "child_process";
+import { fileURLToPath } from "url";
 import { Resvg } from "@resvg/resvg-js";
 
 // Quadratic Bezier interpolation helper
@@ -11,13 +12,26 @@ function getQuadBezierPoint(x0: number, y0: number, cx: number, cy: number, x1: 
   return { x: Math.round(x * 10) / 10, y: Math.round(y * 10) / 10 };
 }
 
+function readGifLogicalScreen(gifPath: string): { width: number; height: number } {
+  const header = Buffer.alloc(10);
+  const fd = fs.openSync(gifPath, "r");
+  try {
+    fs.readSync(fd, header, 0, 10, 0);
+  } finally {
+    fs.closeSync(fd);
+  }
+  if (header.toString("ascii", 0, 6) !== "GIF89a" && header.toString("ascii", 0, 6) !== "GIF87a") {
+    throw new Error(`Invalid GIF magic header in ${gifPath}`);
+  }
+  return { width: header.readUInt16LE(6), height: header.readUInt16LE(8) };
+}
+
 export function generateHeroSvg(frameIndex: number = -1, totalFrames: number = 36): string {
   const isStatic = frameIndex === -1;
   const t = isStatic ? 0 : frameIndex / totalFrames; // 0.0 to 1.0
 
   // Calculate animated coordinates for cargo ships along trade corridors
   // Route 1: Shanghai (150, 230) -> Singapore (210, 300) -> Red Sea Gate (290, 240) -> Rotterdam (380, 160)
-  // Let's break Route 1 into two segments: s1 (0 to 0.5) and s2 (0.5 to 1.0)
   const r1Progress = (t + 0.1) % 1;
   let ship1 = { x: 150, y: 230 };
   if (r1Progress < 0.5) {
@@ -56,6 +70,53 @@ export function generateHeroSvg(frameIndex: number = -1, totalFrames: number = 3
   // Pulse intensity for live indicator
   const pulseOpacity = isStatic ? 0.9 : 0.4 + 0.6 * Math.sin(t * Math.PI * 2);
   const spotRateDiff = isStatic ? "4,850" : (4850 + Math.round(Math.sin(t * Math.PI * 4) * 18)).toLocaleString();
+
+  // SMIL only in the standalone SVG export. Frame PNGs bake motion instead.
+  const radarMarkup = isStatic
+    ? `
+    <circle cx="290" cy="240" r="8" fill="none" stroke="#EF4444" stroke-width="1.5" opacity="1">
+      <animate attributeName="r" values="8;33;8" dur="2s" repeatCount="indefinite" />
+      <animate attributeName="opacity" values="1;0;1" dur="2s" repeatCount="indefinite" />
+    </circle>
+    <circle cx="290" cy="240" r="20" fill="none" stroke="#EF4444" stroke-width="1" opacity="0.5">
+      <animate attributeName="r" values="20;40;20" dur="2s" begin="1s" repeatCount="indefinite" />
+      <animate attributeName="opacity" values="0.5;0;0.5" dur="2s" begin="1s" repeatCount="indefinite" />
+    </circle>
+    <circle cx="510" cy="240" r="6" fill="none" stroke="#10B981" stroke-width="1.5" opacity="1">
+      <animate attributeName="r" values="6;26;6" dur="2s" repeatCount="indefinite" />
+      <animate attributeName="opacity" values="1;0;1" dur="2s" repeatCount="indefinite" />
+    </circle>`
+    : `
+    <circle cx="290" cy="240" r="${radarRadius1}" fill="none" stroke="#EF4444" stroke-width="1.5" opacity="${radarOpacity1}" />
+    <circle cx="290" cy="240" r="${radarRadius2}" fill="none" stroke="#EF4444" stroke-width="1" opacity="${radarOpacity2}" />
+    <circle cx="510" cy="240" r="${radarRadius1 * 0.8}" fill="none" stroke="#10B981" stroke-width="1.5" opacity="${radarOpacity1}" />`;
+
+  const shipsMarkup = isStatic
+    ? `
+    <circle r="4.5" fill="#FFFFFF" stroke="#0EA5E9" stroke-width="2" filter="url(#glow)">
+      <animateMotion dur="4s" repeatCount="indefinite" path="M 150 230 Q 180 280 210 300 Q 280 250 380 160" />
+    </circle>
+    <circle r="5" fill="#FDE68A" stroke="#F59E0B" stroke-width="2" filter="url(#glow)">
+      <animateMotion dur="5s" repeatCount="indefinite" path="M 210 300 Q 260 360 310 350 Q 360 280 380 160" />
+    </circle>
+    <circle r="5" fill="#A7F3D0" stroke="#10B981" stroke-width="2" filter="url(#glow)">
+      <animateMotion dur="4.5s" repeatCount="indefinite" path="M 150 230 Q 320 110 490 180 L 510 240" />
+    </circle>`
+    : `
+    <circle cx="${ship1.x}" cy="${ship1.y}" r="4.5" fill="#FFFFFF" stroke="#0EA5E9" stroke-width="2" filter="url(#glow)" />
+    <circle cx="${ship2.x}" cy="${ship2.y}" r="5" fill="#FDE68A" stroke="#F59E0B" stroke-width="2" filter="url(#glow)" />
+    <circle cx="${ship3.x}" cy="${ship3.y}" r="5" fill="#A7F3D0" stroke="#10B981" stroke-width="2" filter="url(#glow)" />`;
+
+  const pulseMarkup = isStatic
+    ? `<circle cx="18" cy="45" r="4.5" fill="#10B981" opacity="0.9">
+      <animate attributeName="opacity" values="0.4;1;0.4" dur="2s" repeatCount="indefinite" />
+    </circle>`
+    : `<circle cx="18" cy="45" r="4.5" fill="#10B981" opacity="${pulseOpacity}" />`;
+
+  const routeDashMarkup = isStatic
+    ? `<!-- dash drift -->
+    <animate attributeName="stroke-dashoffset" from="0" to="-40" dur="2s" repeatCount="indefinite" />`
+    : "";
 
   return `<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 420" width="1200" height="420">
@@ -125,16 +186,20 @@ export function generateHeroSvg(frameIndex: number = -1, totalFrames: number = 3
 
     <!-- Route Curves -->
     <!-- Route 1: Shanghai -> Singapore -> Red Sea -> Rotterdam (Standard Asia-Europe) -->
-    <path d="M 150 230 Q 180 280 210 300 Q 280 250 380 160" fill="none" stroke="#38BDF8" stroke-width="2.5" stroke-dasharray="6 4" opacity="0.85" />
+    <path d="M 150 230 Q 180 280 210 300 Q 280 250 380 160" fill="none" stroke="#38BDF8" stroke-width="2.5" stroke-dasharray="6 4" opacity="0.85">
+      ${routeDashMarkup}
+    </path>
     <!-- Route 2: Singapore -> Cape of Good Hope -> Rotterdam (Red Sea Rerouting) -->
-    <path d="M 210 300 Q 260 360 310 350 Q 360 280 380 160" fill="none" stroke="#F59E0B" stroke-width="3" stroke-dasharray="8 4" opacity="0.9" />
+    <path d="M 210 300 Q 260 360 310 350 Q 360 280 380 160" fill="none" stroke="#F59E0B" stroke-width="3" stroke-dasharray="8 4" opacity="0.9">
+      ${routeDashMarkup}
+    </path>
     <!-- Route 3: Shanghai -> US West Coast -> Mexico Monterrey (Nearshoring 2.0) -->
-    <path d="M 150 230 Q 320 110 490 180 L 510 240" fill="none" stroke="#10B981" stroke-width="3" stroke-dasharray="6 3" opacity="0.9" />
+    <path d="M 150 230 Q 320 110 490 180 L 510 240" fill="none" stroke="#10B981" stroke-width="3" stroke-dasharray="6 3" opacity="0.9">
+      ${routeDashMarkup}
+    </path>
 
     <!-- Radar Warning Rings (Red Sea & Mexico) -->
-    <circle cx="290" cy="240" r="${radarRadius1}" fill="none" stroke="#EF4444" stroke-width="1.5" opacity="${radarOpacity1}" />
-    <circle cx="290" cy="240" r="${radarRadius2}" fill="none" stroke="#EF4444" stroke-width="1" opacity="${radarOpacity2}" />
-    <circle cx="510" cy="240" r="${radarRadius1 * 0.8}" fill="none" stroke="#10B981" stroke-width="1.5" opacity="${radarOpacity1}" />
+    ${radarMarkup}
 
     <!-- Major Logistics Nodes (Ports & Corridors) -->
     <!-- Node 1: Shanghai -->
@@ -148,7 +213,7 @@ export function generateHeroSvg(frameIndex: number = -1, totalFrames: number = 3
     <!-- Node 3: Red Sea Gate (Chokepoint Alert) -->
     <circle cx="290" cy="240" r="7" fill="#EF4444" stroke="#FFFFFF" stroke-width="2" filter="url(#glow)" />
     <rect x="235" y="195" width="110" height="22" rx="4" fill="#7F1D1D" stroke="#EF4444" stroke-width="1" opacity="0.95" />
-    <text x="290" y="210" font-family="system-ui, -apple-system, sans-serif" font-size="10" font-weight="800" fill="#FCA5A5" text-anchor="middle">⚠️ RED SEA [DETOUR]</text>
+    <text x="290" y="210" font-family="system-ui, -apple-system, sans-serif" font-size="10" font-weight="800" fill="#FCA5A5" text-anchor="middle">RED SEA [DETOUR]</text>
 
     <!-- Node 4: Cape of Good Hope Detour -->
     <circle cx="310" cy="350" r="6" fill="#F59E0B" stroke="#FFFFFF" stroke-width="2" />
@@ -166,19 +231,17 @@ export function generateHeroSvg(frameIndex: number = -1, totalFrames: number = 3
     <!-- Node 7: Mexico Monterrey (Nearshoring 2.0) -->
     <circle cx="510" cy="240" r="7" fill="#10B981" stroke="#FFFFFF" stroke-width="2" filter="url(#glow)" />
     <rect x="440" y="255" width="140" height="24" rx="4" fill="#064E3B" stroke="#10B981" stroke-width="1" opacity="0.95" />
-    <text x="510" y="271" font-family="system-ui, -apple-system, sans-serif" font-size="10" font-weight="800" fill="#A7F3D0" text-anchor="middle">⚡ NEARSHORING 2.0 (+34%)</text>
+    <text x="510" y="271" font-family="system-ui, -apple-system, sans-serif" font-size="10" font-weight="800" fill="#A7F3D0" text-anchor="middle">NEARSHORING 2.0 (+34%)</text>
 
     <!-- Animated Cargo Ships along Paths -->
-    <circle cx="${ship1.x}" cy="${ship1.y}" r="4.5" fill="#FFFFFF" stroke="#0EA5E9" stroke-width="2" filter="url(#glow)" />
-    <circle cx="${ship2.x}" cy="${ship2.y}" r="5" fill="#FDE68A" stroke="#F59E0B" stroke-width="2" filter="url(#glow)" />
-    <circle cx="${ship3.x}" cy="${ship3.y}" r="5" fill="#A7F3D0" stroke="#10B981" stroke-width="2" filter="url(#glow)" />
+    ${shipsMarkup}
   </g>
 
   <!-- 3. RIGHT SIDE: Title, Badges & Telemetry MUX Dashboard (X: 590 to 1170) -->
   <g id="dashboard-header" transform="translate(590, 0)">
     <!-- Status Pill -->
     <rect x="0" y="30" width="570" height="30" rx="15" fill="#0F172A" stroke="#334155" stroke-width="1" opacity="0.95" filter="url(#shadow)" />
-    <circle cx="18" cy="45" r="4.5" fill="#10B981" opacity="${pulseOpacity}" />
+    ${pulseMarkup}
     <text x="32" y="49" font-family="system-ui, -apple-system, monospace" font-size="11" font-weight="700" fill="#94A3B8" letter-spacing="0.5">
       ACTIVE TELEMETRY MUX • <tspan fill="#38BDF8">2026 H1 / Q1 / FY REPORT WINDOWS</tspan> • <tspan fill="#A78BFA">GEMINI 2.5 RAG</tspan>
     </text>
@@ -189,7 +252,7 @@ export function generateHeroSvg(frameIndex: number = -1, totalFrames: number = 3
     <text x="0" y="174" font-family="system-ui, -apple-system, sans-serif" font-size="24" font-weight="800" fill="#94A3B8" letter-spacing="1.5">RESEARCH DASHBOARD 2026</text>
 
     <!-- Chinese Subheadline -->
-    <text x="0" y="206" font-family="system-ui, -apple-system, 'IPAGothic', 'Microsoft YaHei', sans-serif" font-size="14" font-weight="600" fill="#CBD5E1">
+    <text x="0" y="206" font-family="system-ui, -apple-system, 'Noto Sans CJK SC', 'IPAGothic', 'Microsoft YaHei', sans-serif" font-size="14" font-weight="600" fill="#CBD5E1">
       2026年全球供应链与跨境物流报告 &amp; Gemini 2.5 智能分析工作台 · 多周期动态推演
     </text>
 
@@ -197,7 +260,7 @@ export function generateHeroSvg(frameIndex: number = -1, totalFrames: number = 3
     <rect x="0" y="225" width="570" height="135" rx="10" fill="#0F172A" stroke="#334155" stroke-width="1.5" opacity="0.95" filter="url(#shadow)" />
     <path d="M 0 260 L 570 260" stroke="#1E293B" stroke-width="1" />
     <text x="16" y="248" font-family="system-ui, -apple-system, monospace" font-size="11" font-weight="700" fill="#64748B" letter-spacing="1">
-      ⚡ TELEMETRY MUX REAL-TIME STREAM • <tspan fill="#10B981">4s INTERVAL ACTIVE</tspan> • CALIBRATED AS OF 2026-06-30
+      TELEMETRY MUX REAL-TIME STREAM • <tspan fill="#10B981">4s INTERVAL ACTIVE</tspan> • AS OF 2026-06-30
     </text>
 
     <!-- Grid 2x2 inside Dashboard Card -->
@@ -205,56 +268,58 @@ export function generateHeroSvg(frameIndex: number = -1, totalFrames: number = 3
     <text x="20" y="285" font-family="system-ui, -apple-system, monospace" font-size="11" font-weight="600" fill="#64748B">WCI TRANSPACIFIC SPOT</text>
     <text x="20" y="312" font-family="system-ui, -apple-system, sans-serif" font-size="22" font-weight="900" fill="#38BDF8">$${spotRateDiff} <tspan font-size="13" font-weight="700" fill="#94A3B8">/ FEU</tspan></text>
     <rect x="155" y="294" width="75" height="20" rx="4" fill="#7F1D1D" opacity="0.8" />
-    <text x="192" y="308" font-family="system-ui, -apple-system, monospace" font-size="11" font-weight="700" fill="#FCA5A5" text-anchor="middle">▲ +12.4%</text>
+    <text x="192" y="308" font-family="system-ui, -apple-system, monospace" font-size="11" font-weight="700" fill="#FCA5A5" text-anchor="middle">+12.4%</text>
 
     <!-- Metric 2: Stress Index -->
     <text x="290" y="285" font-family="system-ui, -apple-system, monospace" font-size="11" font-weight="600" fill="#64748B">SUPPLY CHAIN STRESS (SCSI)</text>
     <text x="290" y="312" font-family="system-ui, -apple-system, sans-serif" font-size="22" font-weight="900" fill="#F59E0B">68.4 <tspan font-size="13" font-weight="700" fill="#94A3B8">/ 100</tspan></text>
     <rect x="415" y="294" width="90" height="20" rx="4" fill="#451A03" opacity="0.8" />
-    <text x="460" y="308" font-family="system-ui, -apple-system, monospace" font-size="11" font-weight="700" fill="#FDE68A" text-anchor="middle">⚠️ ELEVATED</text>
+    <text x="460" y="308" font-family="system-ui, -apple-system, monospace" font-size="11" font-weight="700" fill="#FDE68A" text-anchor="middle">ELEVATED</text>
 
-    <!-- Metric 3: Nearshoring -->
+    <!-- Metric 3: Nearshoring (kept short to avoid overlap with metric 4) -->
     <text x="20" y="335" font-family="system-ui, -apple-system, monospace" font-size="11" font-weight="600" fill="#64748B">NEARSHORING 2.0 CORRIDOR</text>
-    <text x="20" y="352" font-family="system-ui, -apple-system, sans-serif" font-size="15" font-weight="800" fill="#10B981">Mexico Monterrey Route <tspan fill="#A7F3D0">▲ +34.2% Vol</tspan></text>
+    <text x="20" y="352" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="800" fill="#10B981">Mexico Monterrey</text>
+    <text x="20" y="368" font-family="system-ui, -apple-system, sans-serif" font-size="12" font-weight="700" fill="#A7F3D0">+34.2% Vol</text>
 
     <!-- Metric 4: Gemini AI -->
     <text x="290" y="335" font-family="system-ui, -apple-system, monospace" font-size="11" font-weight="600" fill="#64748B">AI DECISION ENGINE (RAG)</text>
-    <text x="290" y="352" font-family="system-ui, -apple-system, sans-serif" font-size="15" font-weight="800" fill="#8E75FF">Gemini 2.5 Grounded <tspan fill="#DDD6FE">● ESG Verified</tspan></text>
+    <text x="290" y="352" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="800" fill="#8E75FF">Gemini 2.5 Grounded</text>
+    <text x="290" y="368" font-family="system-ui, -apple-system, sans-serif" font-size="12" font-weight="700" fill="#DDD6FE">ESG Verified</text>
   </g>
 
   <!-- 4. BOTTOM FOOTER BAR: Tech Stack Badges (Y: 375 to 415) -->
   <g id="tech-stack" transform="translate(30, 375)">
     <!-- Badge 1: React 19 -->
     <rect x="0" y="0" width="115" height="28" rx="6" fill="#1E293B" stroke="#334155" stroke-width="1" />
-    <text x="57" y="18" font-family="system-ui, -apple-system, sans-serif" font-size="12" font-weight="700" fill="#61DAFB" text-anchor="middle">⚛️ React 19</text>
+    <text x="57" y="18" font-family="system-ui, -apple-system, sans-serif" font-size="12" font-weight="700" fill="#61DAFB" text-anchor="middle">React 19</text>
 
     <!-- Badge 2: TypeScript -->
     <rect x="125" y="0" width="135" height="28" rx="6" fill="#1E293B" stroke="#334155" stroke-width="1" />
-    <text x="192" y="18" font-family="system-ui, -apple-system, sans-serif" font-size="12" font-weight="700" fill="#3178C6" text-anchor="middle">📘 TypeScript 5.8</text>
+    <text x="192" y="18" font-family="system-ui, -apple-system, sans-serif" font-size="12" font-weight="700" fill="#3178C6" text-anchor="middle">TypeScript 5.8</text>
 
     <!-- Badge 3: Vite 6 -->
     <rect x="270" y="0" width="105" height="28" rx="6" fill="#1E293B" stroke="#334155" stroke-width="1" />
-    <text x="322" y="18" font-family="system-ui, -apple-system, sans-serif" font-size="12" font-weight="700" fill="#646CFF" text-anchor="middle">⚡ Vite 6</text>
+    <text x="322" y="18" font-family="system-ui, -apple-system, sans-serif" font-size="12" font-weight="700" fill="#646CFF" text-anchor="middle">Vite 6</text>
 
     <!-- Badge 4: Tailwind CSS v4 -->
     <rect x="385" y="0" width="145" height="28" rx="6" fill="#1E293B" stroke="#334155" stroke-width="1" />
-    <text x="457" y="18" font-family="system-ui, -apple-system, sans-serif" font-size="12" font-weight="700" fill="#06B6D4" text-anchor="middle">🎨 Tailwind CSS v4</text>
+    <text x="457" y="18" font-family="system-ui, -apple-system, sans-serif" font-size="12" font-weight="700" fill="#06B6D4" text-anchor="middle">Tailwind CSS v4</text>
 
     <!-- Badge 5: Express 4 -->
     <rect x="540" y="0" width="115" height="28" rx="6" fill="#1E293B" stroke="#334155" stroke-width="1" />
-    <text x="597" y="18" font-family="system-ui, -apple-system, sans-serif" font-size="12" font-weight="700" fill="#E2E8F0" text-anchor="middle">🚀 Express 4</text>
+    <text x="597" y="18" font-family="system-ui, -apple-system, sans-serif" font-size="12" font-weight="700" fill="#E2E8F0" text-anchor="middle">Express 4</text>
 
     <!-- Badge 6: Gemini 2.5 Flash -->
     <rect x="665" y="0" width="170" height="28" rx="6" fill="#1E293B" stroke="#8E75FF" stroke-width="1" />
-    <text x="750" y="18" font-family="system-ui, -apple-system, sans-serif" font-size="12" font-weight="700" fill="#8E75FF" text-anchor="middle">🤖 Gemini 2.5 Flash</text>
+    <text x="750" y="18" font-family="system-ui, -apple-system, sans-serif" font-size="12" font-weight="700" fill="#8E75FF" text-anchor="middle">Gemini 2.5 Flash</text>
 
     <!-- Badge 7: Recharts -->
     <rect x="845" y="0" width="125" height="28" rx="6" fill="#1E293B" stroke="#334155" stroke-width="1" />
-    <text x="907" y="18" font-family="system-ui, -apple-system, sans-serif" font-size="12" font-weight="700" fill="#10B981" text-anchor="middle">📊 Recharts 3</text>
+    <text x="907" y="18" font-family="system-ui, -apple-system, sans-serif" font-size="12" font-weight="700" fill="#10B981" text-anchor="middle">Recharts 3</text>
 
     <!-- Badge 8: Apache 2.0 -->
     <rect x="980" y="0" width="160" height="28" rx="6" fill="#1E293B" stroke="#334155" stroke-width="1" />
-    <text x="1060" y="18" font-family="system-ui, -apple-system, sans-serif" font-size="12" font-weight="700" fill="#F59E0B" text-anchor="middle">⚖️ Apache 2.0 License</text>
+    <text x="1060" y="18" font-family="system-ui, -apple-system, sans-serif" font-size="12" font-weight="700" fill="#F59E0B" text-anchor="middle">Apache 2.0 License</text>
   </g>
 </svg>`;
 }
@@ -266,10 +331,11 @@ async function main() {
     fs.mkdirSync(publicDir, { recursive: true });
   }
 
-  // 1. Save Static/Animated SVG Source
+  // 1. Save Static/Animated SVG Source (with SMIL for direct SVG viewing)
   const svgPath = path.join(publicDir, "hero-banner.svg");
   const baseSvg = generateHeroSvg(-1);
   fs.writeFileSync(svgPath, baseSvg, "utf8");
+  fs.copyFileSync(svgPath, path.join(process.cwd(), "hero-banner.svg"));
   console.log(`✅ Generated SVG Source: ${svgPath} (${(fs.statSync(svgPath).size / 1024).toFixed(2)} KB)`);
 
   // 2. Generate PNG frames using @resvg/resvg-js
@@ -292,19 +358,35 @@ async function main() {
   }
   console.log(`✅ Rendered ${totalFrames} PNG frames.`);
 
-  // 3. Compile to Animated GIF using ffmpeg with high-quality palette filter and loop 0 for universal compatibility (macOS Preview/QuickLook)
+  // 3. Compile to Animated GIF using ffmpeg with high-quality palette filter and loop 0
   const gifPath = path.join(publicDir, "hero-banner.gif");
   console.log("⏳ Compiling frames into high-definition animated GIF using ffmpeg...");
-  const cmd = `ffmpeg -y -framerate 15 -i "${tmpDir}/frame_%03d.png" -filter_complex "[0:v] split [a][b];[a] palettegen=stats_mode=full:max_colors=256 [p];[b][p] paletteuse=dither=bayer:bayer_scale=5" -loop 0 "${gifPath}"`;
+  const cmd = `ffmpeg -y -framerate 15 -i "${tmpDir}/frame_%03d.png" -filter_complex "[0:v]split[a][b];[a]palettegen=stats_mode=full:max_colors=256[p];[b][p]paletteuse=dither=bayer:bayer_scale=5" -loop 0 "${gifPath}"`;
   execSync(cmd, { stdio: "inherit" });
 
   // Clean up temporary frame directory
   fs.rmSync(tmpDir, { recursive: true, force: true });
-  console.log(`✅ Generated Animated GIF Hero: ${gifPath} (${(fs.statSync(gifPath).size / 1024).toFixed(2)} KB)`);
+
+  // 4. Validate binary GIF dimensions (guards against UTF-8 mangling / bad encodes)
+  const { width, height } = readGifLogicalScreen(gifPath);
+  if (width !== 1200 || height !== 420) {
+    throw new Error(`Generated GIF has unexpected logical screen ${width}x${height}; expected 1200x420`);
+  }
+  // Detect UTF-8 replacement corruption (U+FFFD -> ef bf bd) that previously broke this asset
+  const sample = fs.readFileSync(gifPath);
+  if (sample.includes(Buffer.from([0xef, 0xbf, 0xbd]))) {
+    throw new Error("Generated GIF appears UTF-8-mangled (contains U+FFFD bytes). Refuse to write.");
+  }
+
+  fs.copyFileSync(gifPath, path.join(process.cwd(), "hero-banner.gif"));
+  console.log(`✅ Generated Animated GIF Hero: ${gifPath} (${(fs.statSync(gifPath).size / 1024).toFixed(2)} KB) [${width}x${height}]`);
   console.log("=== Hero Banner Generation Completed Successfully ===");
 }
 
-main().catch((err) => {
-  console.error("Fatal Error generating hero banner:", err);
-  process.exit(1);
-});
+const isDirectRun = process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
+if (isDirectRun) {
+  main().catch((err) => {
+    console.error("Fatal Error generating hero banner:", err);
+    process.exit(1);
+  });
+}
