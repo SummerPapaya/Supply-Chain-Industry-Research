@@ -127,7 +127,7 @@ export default function ReportOverview({ kpiData, periodKey = "2026_H1", periodD
         <div className="bg-[#0B132B] border border-slate-800 rounded-sm p-3 overflow-hidden shadow-inner flex flex-col items-center">
           <div className="w-full flex items-center justify-between mb-2 text-[11px] font-mono text-slate-400">
             <span className="text-blue-400 font-bold">
-              {previewFormat === "gif" ? "🎥 ACTIVE RENDER: /public/hero-banner.gif (198 KB)" : "📐 ACTIVE RENDER: /public/hero-banner.svg (14 KB)"}
+              {previewFormat === "gif" ? "🎥 ACTIVE RENDER: /public/hero-banner.gif (1200×420)" : "📐 ACTIVE RENDER: /public/hero-banner.svg (SMIL)"}
             </span>
             <span className="text-emerald-400 font-bold flex items-center gap-1">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
